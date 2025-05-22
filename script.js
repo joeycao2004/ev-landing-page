@@ -1,88 +1,151 @@
-// Get video element
-const video = document.getElementById('evVideo');
-
-// Initial state
-let clickCount = 0;
-let idleTimeout;
+let isLocked = false;
 let isSleeping = false;
+let clickCount = 0;
+let clickTimer = null;
+let idleTimeout = null;
+let pressTimer = null;
 
-// Helper to play a video and return a Promise when it ends
-function playVideo(src, loop = false) {
+// === 1. Play video and handle lock ===
+function playVideo(src, loop = false, lockDuringPlay = true) {
   return new Promise((resolve) => {
-    video.loop = loop;
+    const video = document.getElementById('evVideo');
+    if (!video) return;
+
+    if (lockDuringPlay) isLocked = true;
+
+    video.pause();
     video.src = src;
-    video.play();
-    video.onended = () => {
-      if (!loop) resolve();
+    video.loop = loop;
+
+    const onEnd = () => {
+      video.removeEventListener('ended', onEnd);
+      if (!loop) {
+        isLocked = false;
+        resolve();
+      }
     };
-    if (loop) resolve(); // if looping, don't wait
+
+    if (!loop) {
+      video.addEventListener('ended', onEnd);
+    } else {
+      // resolve instantly if looping
+      isLocked = false;
+      resolve();
+    }
+
+    video.play().catch((e) => {
+      console.error('Playback failed:', e);
+    });
   });
 }
 
-// Set Idle Loop
-function playIdle() {
-  isSleeping = false;
-  playVideo('videos/Idle.mp4', true);
-}
-
-// Set Sleep Loop
-function playSleepLoop() {
-  isSleeping = true;
-  playVideo('videos/Sleep-loop.mp4', true);
-}
-
-// Reset idle timer
+// === 2. Idle behavior ===
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
   if (!isSleeping) {
     idleTimeout = setTimeout(async () => {
-      await playVideo('videos/Sleep-start.mp4');
-      playSleepLoop();
-    }, 10000); // 10 seconds
+      isLocked = true;
+      await playVideo('videos/Sleep-start.mp4', false);
+      isSleeping = true;
+      await playVideo('videos/Sleep-loop.mp4', true);
+    }, 10000);
   }
 }
 
-// Handle interaction
-function handleInteraction() {
+// === 3. Wake from sleep ===
+function wakeUp() {
   if (isSleeping) {
     isSleeping = false;
-    playVideo('videos/Sleep-wake.mp4').then(playIdle);
-    return;
+    isLocked = true;
+    playVideo('videos/Sleep-wake.mp4', false).then(() => {
+      playIdle();
+    });
   }
+}
+
+// === 4. Idle state ===
+function playIdle() {
+  isSleeping = false;
+  isLocked = false;
+  playVideo('videos/Idle.mp4', true, false);
+  resetIdleTimer();
+}
+
+// === 5. Handle single, multi-clicks with debounce ===
+function registerClick() {
+  if (isLocked || isSleeping) return;
 
   clickCount++;
-  if (clickCount === 1 || clickCount === 2) {
-    playVideo('videos/Roar.mp4').then(playIdle);
-  } else {
-    playVideo('videos/Rage.mp4').then(playIdle);
-  }
-
-  clickCount = 0;
+  clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => {
+    if (clickCount > 2) {
+      playVideo('videos/Rage.mp4').then(playIdle);
+    } else {
+      playVideo('videos/Roar.mp4').then(playIdle);
+    }
+    clickCount = 0;
+  }, 500);
 }
 
-// Long press handler
-let pressTimer;
+// === 6. Handle long press ===
 function handleLongPressStart() {
+  if (isLocked || isSleeping) return;
+
   pressTimer = setTimeout(() => {
+    isLocked = true;
     clickCount = 0;
     playVideo('videos/Nuzzle.mp4').then(playIdle);
-  }, 1000); // 1 second
+  }, 500); // 0.5s threshold
 }
+
 function handleLongPressEnd() {
   clearTimeout(pressTimer);
 }
 
-// Set up click region
-document.addEventListener('DOMContentLoaded', () => {
-  playIdle();
-  resetIdleTimer();
+// === 7. Preload all videos & handle loading screen ===
+function preloadAllVideos(callback) {
+  const sources = [
+    'videos/Roar.mp4',
+    'videos/Rage.mp4',
+    'videos/Nuzzle.mp4',
+    'videos/Sleep-start.mp4',
+    'videos/Sleep-loop.mp4',
+    'videos/Sleep-wake.mp4',
+  ];
 
+  let loaded = 0;
+
+  sources.forEach((src) => {
+    const v = document.createElement('video');
+    v.src = src;
+    v.preload = 'auto';
+    v.oncanplaythrough = () => {
+      loaded++;
+      if (loaded === sources.length) {
+        callback(); // All videos loaded
+      }
+    };
+  });
+}
+
+// === DOM Ready ===
+document.addEventListener('DOMContentLoaded', () => {
   const clickbox = document.getElementById('clickbox');
+  const loadingScreen = document.getElementById('loadingScreen');
+
+  preloadAllVideos(() => {
+    loadingScreen.style.display = 'none';
+    playIdle();
+  });
 
   clickbox.addEventListener('mousedown', handleLongPressStart);
   clickbox.addEventListener('mouseup', handleLongPressEnd);
   clickbox.addEventListener('click', () => {
-    handleInteraction();
+    if (isSleeping) {
+      wakeUp();
+    } else {
+      registerClick();
+    }
     resetIdleTimer();
   });
 });
