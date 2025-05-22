@@ -5,17 +5,40 @@ let clickTimer = null;
 let idleTimeout = null;
 let pressTimer = null;
 
-// === 1. Play video and handle lock ===
+const video = document.getElementById('evVideo');
+const freezeCanvas = document.getElementById('videoFreezeFrame');
+const freezeCtx = freezeCanvas.getContext('2d');
+
+// === Utility: Freeze current video frame to canvas ===
+function captureFreezeFrame() {
+  freezeCanvas.width = video.videoWidth;
+  freezeCanvas.height = video.videoHeight;
+  freezeCtx.drawImage(video, 0, 0, freezeCanvas.width, freezeCanvas.height);
+  freezeCanvas.style.display = 'block';
+}
+
+// === Utility: Clear canvas after new video begins
+function clearFreezeFrame() {
+  freezeCanvas.style.display = 'none';
+}
+
+// === Play video with optional freeze-frame logic ===
 function playVideo(src, loop = false, lockDuringPlay = true) {
   return new Promise((resolve) => {
-    const video = document.getElementById('evVideo');
     if (!video) return;
 
     if (lockDuringPlay) isLocked = true;
 
     video.pause();
+    captureFreezeFrame(); // Capture last frame before switch
     video.src = src;
     video.loop = loop;
+
+    const onStart = () => {
+      clearFreezeFrame();
+      video.removeEventListener('playing', onStart);
+    };
+    video.addEventListener('playing', onStart);
 
     const onEnd = () => {
       video.removeEventListener('ended', onEnd);
@@ -40,7 +63,6 @@ function playVideo(src, loop = false, lockDuringPlay = true) {
   });
 }
 
-// === 2. Idle behavior ===
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
   if (!isSleeping) {
@@ -53,7 +75,6 @@ function resetIdleTimer() {
   }
 }
 
-// === 3. Wake from sleep ===
 function wakeUp() {
   if (isSleeping) {
     isSleeping = false;
@@ -64,7 +85,6 @@ function wakeUp() {
   }
 }
 
-// === 4. Idle state ===
 function playIdle() {
   isSleeping = false;
   isLocked = false;
@@ -72,7 +92,6 @@ function playIdle() {
   resetIdleTimer();
 }
 
-// === 5. Handle single, multi-clicks with debounce ===
 function registerClick() {
   if (isLocked || isSleeping) return;
 
@@ -88,7 +107,6 @@ function registerClick() {
   }, 500);
 }
 
-// === 6. Handle long press ===
 function handleLongPressStart() {
   if (isLocked || isSleeping) return;
 
@@ -96,14 +114,13 @@ function handleLongPressStart() {
     isLocked = true;
     clickCount = 0;
     playVideo('videos/Nuzzle.mp4').then(playIdle);
-  }, 500); // 0.5s threshold
+  }, 500);
 }
 
 function handleLongPressEnd() {
   clearTimeout(pressTimer);
 }
 
-// === 7. Preload all videos & handle loading screen ===
 function preloadAllVideos(callback) {
   const sources = [
     'videos/Roar.mp4',
@@ -126,7 +143,7 @@ function preloadAllVideos(callback) {
       loaded++;
       console.log(`✅ Loaded: ${src}`);
       if (loaded + errored === sources.length) {
-        console.log("✅ All preloading attempts finished");
+        console.log("✅ All preloading done");
         callback();
       }
     };
@@ -135,7 +152,6 @@ function preloadAllVideos(callback) {
       errored++;
       console.error(`❌ Failed to preload: ${src}`);
       if (loaded + errored === sources.length) {
-        console.warn("⚠️ Preloading completed with errors");
         callback();
       }
     };
@@ -147,13 +163,11 @@ function preloadAllVideos(callback) {
   }, 10000);
 }
 
-// === DOM Ready ===
 document.addEventListener('DOMContentLoaded', () => {
   const clickbox = document.getElementById('clickbox');
   const loadingScreen = document.getElementById('loadingScreen');
 
   preloadAllVideos(() => {
-    console.log("🚀 Starting Ev landing animation");
     if (loadingScreen) {
       loadingScreen.style.opacity = '0';
       setTimeout(() => {
