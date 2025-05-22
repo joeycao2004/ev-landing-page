@@ -4,23 +4,23 @@ let clickCount = 0;
 let clickTimer = null;
 let idleTimeout = null;
 let pressTimer = null;
+let messageShown = false;
 
 const video = document.getElementById('evVideo');
 const freezeCanvas = document.getElementById('videoFreezeFrame');
 const freezeCtx = freezeCanvas.getContext('2d');
+const loadingScreen = document.getElementById('loadingScreen');
+const loadingMessage = document.getElementById('loadingMessage');
 
 // === Utility: Freeze current video frame to canvas ===
 function captureFreezeFrame() {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
 
-  if (vw === 0 || vh === 0) return; // prevent glitch if not ready
+  if (vw === 0 || vh === 0) return;
 
-  // Set canvas resolution to match video
   freezeCanvas.width = vw;
   freezeCanvas.height = vh;
-
-  // Force canvas visual size to match actual video on screen
   freezeCanvas.style.width = video.offsetWidth + 'px';
   freezeCanvas.style.height = video.offsetHeight + 'px';
 
@@ -28,12 +28,24 @@ function captureFreezeFrame() {
   freezeCanvas.style.display = 'block';
 }
 
-// === Utility: Clear canvas after new video begins
+// === Message on loading screen ===
+function showLoadingMessage() {
+  if (!loadingScreen || !loadingMessage || messageShown) return;
+  messageShown = true;
+  loadingMessage.style.opacity = '1';
+
+  setTimeout(() => {
+    loadingMessage.style.opacity = '0';
+    setTimeout(() => {
+      messageShown = false;
+    }, 500);
+  }, 3000);
+}
+
 function clearFreezeFrame() {
   freezeCanvas.style.display = 'none';
 }
 
-// === Play video with optional freeze-frame logic ===
 function playVideo(src, loop = false, lockDuringPlay = true) {
   return new Promise((resolve) => {
     if (!video) return;
@@ -41,7 +53,7 @@ function playVideo(src, loop = false, lockDuringPlay = true) {
     if (lockDuringPlay) isLocked = true;
 
     video.pause();
-    captureFreezeFrame(); // Capture last frame before switch
+    captureFreezeFrame();
     video.src = src;
     video.loop = loop;
 
@@ -166,8 +178,8 @@ function preloadAllVideos(callback) {
 
 document.addEventListener('DOMContentLoaded', () => {
   const clickbox = document.getElementById('clickbox');
-  const loadingScreen = document.getElementById('loadingScreen');
 
+  // 🌀 Preload then start
   preloadAllVideos(() => {
     if (loadingScreen) {
       loadingScreen.style.opacity = '0';
@@ -178,14 +190,22 @@ document.addEventListener('DOMContentLoaded', () => {
     playIdle();
   });
 
-  clickbox.addEventListener('mousedown', handleLongPressStart);
-  clickbox.addEventListener('mouseup', handleLongPressEnd);
+  // 💡 Clicks (after loading)
   clickbox.addEventListener('click', () => {
+    if (loadingScreen.style.display !== 'none') {
+      showLoadingMessage();
+      return;
+    }
+
     if (isSleeping) {
       wakeUp();
     } else {
       registerClick();
     }
+
     resetIdleTimer();
   });
+
+  clickbox.addEventListener('mousedown', handleLongPressStart);
+  clickbox.addEventListener('mouseup', handleLongPressEnd);
 });

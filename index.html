@@ -12,24 +12,17 @@
     <video id="evVideo" autoplay loop muted playsinline style="width: 100%; height: auto;"></video>
     <canvas id="videoFreezeFrame" style="
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 500;
-      display: none;
-    "></canvas>
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 500; display: none;"></canvas>
     <div id="clickbox" style="
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 600;
-    "></div>
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 600;"></div>
   </div>
 
-  <!-- 🔄 Fade-in loading screen -->
+  <!-- 💤 Loading screen -->
   <div id="loadingScreen" style="
     position: fixed;
     top: 0; left: 0;
@@ -38,8 +31,27 @@
     background-size: cover;
     z-index: 1000;
     opacity: 1;
+    transition: opacity 0.5s ease;"></div>
+
+  <!-- ✨ Loading message -->
+  <div id="loadingMessage" style="
+    position: fixed;
+    top: 30vh;
+    left: 60vw;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 18px;
+    opacity: 0;
     transition: opacity 0.5s ease;
-  "></div>
+    z-index: 1001;
+    pointer-events: none;
+    text-align: center;
+    max-width: 300px;">
+    Evarínya needs time to get to know you!<br>Please bear with her and give her a second :)
+  </div>
 
   <script src="script.js"></script>
 </body>
