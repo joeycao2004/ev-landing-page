@@ -19,19 +19,25 @@ function captureFreezeFrame() {
 
   if (vw === 0 || vh === 0) return;
 
-  freezeCanvas.width = vw;
-  freezeCanvas.height = vh;
+  freezeCanvas.width = video.offsetWidth;
+  freezeCanvas.height = video.offsetHeight;
+
   freezeCanvas.style.width = video.offsetWidth + 'px';
   freezeCanvas.style.height = video.offsetHeight + 'px';
 
-  freezeCtx.drawImage(video, 0, 0, vw, vh);
+  freezeCtx.imageSmoothingEnabled = false; // prevent blur
+  freezeCtx.drawImage(video, 0, 0, freezeCanvas.width, freezeCanvas.height);
   freezeCanvas.style.display = 'block';
 }
 
-// === Message on loading screen ===
+function clearFreezeFrame() {
+  freezeCanvas.style.display = 'none';
+}
+
 function showLoadingMessage() {
   if (!loadingScreen || !loadingMessage || messageShown) return;
   messageShown = true;
+
   loadingMessage.style.opacity = '1';
 
   setTimeout(() => {
@@ -40,10 +46,6 @@ function showLoadingMessage() {
       messageShown = false;
     }, 500);
   }, 3000);
-}
-
-function clearFreezeFrame() {
-  freezeCanvas.style.display = 'none';
 }
 
 function playVideo(src, loop = false, lockDuringPlay = true) {
@@ -172,14 +174,13 @@ function preloadAllVideos(callback) {
   });
 
   setTimeout(() => {
-    callback();
+    callback(); // fallback in case videos stall
   }, 10000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const clickbox = document.getElementById('clickbox');
 
-  // 🌀 Preload then start
   preloadAllVideos(() => {
     if (loadingScreen) {
       loadingScreen.style.opacity = '0';
@@ -190,22 +191,18 @@ document.addEventListener('DOMContentLoaded', () => {
     playIdle();
   });
 
-  // 💡 Clicks (after loading)
+  clickbox.addEventListener('mousedown', handleLongPressStart);
+  clickbox.addEventListener('mouseup', handleLongPressEnd);
   clickbox.addEventListener('click', () => {
     if (loadingScreen.style.display !== 'none') {
       showLoadingMessage();
       return;
     }
-
     if (isSleeping) {
       wakeUp();
     } else {
       registerClick();
     }
-
     resetIdleTimer();
   });
-
-  clickbox.addEventListener('mousedown', handleLongPressStart);
-  clickbox.addEventListener('mouseup', handleLongPressEnd);
 });
