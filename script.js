@@ -11,9 +11,20 @@ const freezeCtx = freezeCanvas.getContext('2d');
 
 // === Utility: Freeze current video frame to canvas ===
 function captureFreezeFrame() {
-  freezeCanvas.width = video.videoWidth;
-  freezeCanvas.height = video.videoHeight;
-  freezeCtx.drawImage(video, 0, 0, freezeCanvas.width, freezeCanvas.height);
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  if (vw === 0 || vh === 0) return; // prevent glitch if not ready
+
+  // Set canvas resolution to match video
+  freezeCanvas.width = vw;
+  freezeCanvas.height = vh;
+
+  // Force canvas visual size to match actual video on screen
+  freezeCanvas.style.width = video.offsetWidth + 'px';
+  freezeCanvas.style.height = video.offsetHeight + 'px';
+
+  freezeCtx.drawImage(video, 0, 0, vw, vh);
   freezeCanvas.style.display = 'block';
 }
 
@@ -79,9 +90,7 @@ function wakeUp() {
   if (isSleeping) {
     isSleeping = false;
     isLocked = true;
-    playVideo('videos/Sleep-wake.mp4', false).then(() => {
-      playIdle();
-    });
+    playVideo('videos/Sleep-wake.mp4', false).then(playIdle);
   }
 }
 
@@ -141,24 +150,16 @@ function preloadAllVideos(callback) {
 
     v.oncanplaythrough = () => {
       loaded++;
-      console.log(`✅ Loaded: ${src}`);
-      if (loaded + errored === sources.length) {
-        console.log("✅ All preloading done");
-        callback();
-      }
+      if (loaded + errored === sources.length) callback();
     };
 
     v.onerror = () => {
       errored++;
-      console.error(`❌ Failed to preload: ${src}`);
-      if (loaded + errored === sources.length) {
-        callback();
-      }
+      if (loaded + errored === sources.length) callback();
     };
   });
 
   setTimeout(() => {
-    console.warn("⚠️ Preload timeout reached. Continuing...");
     callback();
   }, 10000);
 }
