@@ -28,13 +28,14 @@ function playVideo(src, loop = false, lockDuringPlay = true) {
     if (!loop) {
       video.addEventListener('ended', onEnd);
     } else {
-      // resolve instantly if looping
       isLocked = false;
       resolve();
     }
 
     video.play().catch((e) => {
-      console.error('Playback failed:', e);
+      if (e.name !== 'AbortError') {
+        console.warn('Playback failed:', e);
+      }
     });
   });
 }
@@ -114,18 +115,36 @@ function preloadAllVideos(callback) {
   ];
 
   let loaded = 0;
+  let errored = 0;
 
   sources.forEach((src) => {
     const v = document.createElement('video');
     v.src = src;
     v.preload = 'auto';
+
     v.oncanplaythrough = () => {
       loaded++;
-      if (loaded === sources.length) {
-        callback(); // All videos loaded
+      console.log(`✅ Loaded: ${src}`);
+      if (loaded + errored === sources.length) {
+        console.log("✅ All preloading attempts finished");
+        callback();
+      }
+    };
+
+    v.onerror = () => {
+      errored++;
+      console.error(`❌ Failed to preload: ${src}`);
+      if (loaded + errored === sources.length) {
+        console.warn("⚠️ Preloading completed with errors");
+        callback();
       }
     };
   });
+
+  setTimeout(() => {
+    console.warn("⚠️ Preload timeout reached. Continuing...");
+    callback();
+  }, 10000);
 }
 
 // === DOM Ready ===
@@ -134,7 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingScreen = document.getElementById('loadingScreen');
 
   preloadAllVideos(() => {
-    loadingScreen.style.display = 'none';
+    console.log("🚀 Starting Ev landing animation");
+    if (loadingScreen) {
+      loadingScreen.style.opacity = '0';
+      setTimeout(() => {
+        loadingScreen.style.display = 'none';
+      }, 500);
+    }
     playIdle();
   });
 
