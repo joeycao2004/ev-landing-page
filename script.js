@@ -88,6 +88,7 @@ function playVideo(src, loop = false, lockDuringPlay = true) {
   });
 }
 
+// ✅ Modified: idle countdown only starts AFTER loop begins
 function resetIdleTimer() {
   clearTimeout(idleTimeout);
   if (!isSleeping) {
@@ -95,7 +96,9 @@ function resetIdleTimer() {
       isLocked = true;
       await playVideo('videos/Sleep-start.mp4', false);
       isSleeping = true;
-      await playVideo('videos/Sleep-loop.mp4', true);
+      await playVideo('videos/Sleep-loop.mp4', true).then(() => {
+        resetIdleTimer(); // restart 10s timer only after Sleep-loop begins
+      });
     }, 10000);
   }
 }
@@ -111,8 +114,9 @@ function wakeUp() {
 function playIdle() {
   isSleeping = false;
   isLocked = false;
-  playVideo('videos/Idle.mp4', true, false);
-  resetIdleTimer();
+  playVideo('videos/Idle.mp4', true, false).then(() => {
+    resetIdleTimer(); // ⏱ Restart countdown only after Idle is actually running
+  });
 }
 
 function registerClick() {
@@ -193,16 +197,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   clickbox.addEventListener('mousedown', handleLongPressStart);
   clickbox.addEventListener('mouseup', handleLongPressEnd);
+
   clickbox.addEventListener('click', () => {
     if (loadingScreen.style.display !== 'none') {
       showLoadingMessage();
       return;
     }
+
     if (isSleeping) {
       wakeUp();
     } else {
       registerClick();
     }
-    resetIdleTimer();
+
+    // 🚫 Removed resetIdleTimer() here — now controlled only in playIdle() and Sleep-loop
   });
 });
