@@ -5,16 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Evarínya Landing</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
+
+  <!-- Import Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Snell+Roundhand&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Avenir';
+      src: local('Avenir'), local('Avenir Next');
+      font-weight: 700;
+    }
+  </style>
 </head>
 
 <body>
   <div id="container" style="position: relative;">
-    
-    <!-- 🎥 Video Background -->
     <video id="evVideo" autoplay loop muted playsinline style="width: 100%; height: auto;"></video>
-
-    <!-- 🧊 Freeze-frame transition -->
     <canvas id="videoFreezeFrame" style="
       position: absolute;
       top: 0; left: 0;
@@ -24,7 +30,7 @@
       display: none;
     "></canvas>
 
-    <!-- 🖱️ Clickbox -->
+    <!-- ✅ Clickbox -->
     <div id="clickbox" style="
       position: absolute;
       top: 0; left: 0;
@@ -33,49 +39,63 @@
       z-index: 600;
     "></div>
 
-    <!-- 🌈 Gradient Overlay -->
+    <!-- ✅ Gradient Overlay -->
     <div id="gradientOverlay" style="
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to right, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%);
-      z-index: 200;
+      z-index: 550;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0.45) 20%, rgba(255, 255, 255, 0) 50%);
       pointer-events: none;
     "></div>
 
-    <!-- ✍️ Title Text Overlay -->
-    <div id="evTextOverlay" style="
+    <!-- ✅ Text Overlay -->
+    <div id="landingText" style="
       position: absolute;
-      top: 10%;
-      left: 6%;
-      z-index: 300;
+      top: 100px;
+      left: 130px;
+      z-index: 700;
       color: black;
-      text-shadow: 0 2px 6px rgba(255,255,255,0.6);
+      font-family: 'Avenir', sans-serif;
     ">
-      <div style="font-family: 'Avenir', sans-serif; font-size: 20px; margin-bottom: 10px;">
-        The Tales of...
-      </div>
-      <div style="font-family: 'Snell Roundhand', 'Brush Script MT', cursive; font-size: 110px; margin-bottom: 10px;">
-        Evarínya
-      </div>
+      <div style="font-size: 20px; font-weight: bold;">The Tales of...</div>
+      <div style="font-family: 'Snell Roundhand', cursive; font-size: 110px; font-weight: bold; line-height: 1em;">Evarínya</div>
       <div style="font-family: 'Quicksand', sans-serif; font-size: 20px;">
-        A fanart from <a href="http://dayofdragons.com/" target="_blank" style="color: inherit; text-decoration: underline;">Day of Dragons</a>
+        A fanart from <a href="https://dayofdragons.com" target="_blank" style="color: black; text-decoration: underline;">Day of Dragons</a>
       </div>
     </div>
+  </div>
 
-    <!-- 🔁 Loading Screen -->
-    <div id="loadingScreen" style="
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: black url('videos/Idle.jpg') center center no-repeat;
-      background-size: cover;
-      z-index: 1000;
-      opacity: 1;
-      transition: opacity 0.5s ease;
-    "></div>
+  <!-- Loading Screen -->
+  <div id="loadingScreen" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: black url('videos/Idle.jpg') center center no-repeat;
+    background-size: cover;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  "></div>
+
+  <div id="loadingMessage" style="
+    position: fixed;
+    top: 55%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.85);
+    color: black;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  ">
+    Evarínya needs time to get to know you! Please bear with her and give her a second :)
   </div>
 
   <script src="script.js"></script>
